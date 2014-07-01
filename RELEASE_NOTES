@@ -118,6 +118,8 @@ COMMAND CHANGES (see man pages for details)
     specialized cores for system use.
  -- Added sacctmgr options to create, modify, list & delete Resources.
  -- Added srun --export option to set/export specific environment variables.
+ -- Added squeue -O/--Format option that makes all job and step fields available
+    for printing.
 
 OTHER CHANGES
 =============

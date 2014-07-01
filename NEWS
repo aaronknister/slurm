@@ -20,6 +20,8 @@ documents those changes that are of interest to users and admins.
     environ to the execution side.
  -- Improve qsub wrapper support for passing environment variables.
  -- qsub wrapper modified to export "all" with -V option
+ -- Added squeue -O/--Format option that makes all job and step fields available
+    for printing.
 
 * Changes in Slurm 14.03.11
 ===========================
