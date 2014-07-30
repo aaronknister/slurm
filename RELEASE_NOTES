@@ -117,6 +117,7 @@ COMMAND CHANGES (see man pages for details)
  -- Added -S/--core-spec option to salloc, sbatch and srun commands to reserve
     specialized cores for system use.
  -- Added sacctmgr options to create, modify, list & delete Resources.
+ -- Added srun --export option to set/export specific environment variables.
 
 OTHER CHANGES
 =============
