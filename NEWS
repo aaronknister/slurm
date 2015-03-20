@@ -19,6 +19,7 @@ documents those changes that are of interest to users and admins.
     --export sbatch/srun command line option, propagate the users'
     environ to the execution side.
  -- Improve qsub wrapper support for passing environment variables.
+ -- qsub wrapper modified to export "all" with -V option
 
 * Changes in Slurm 14.03.11
 ===========================
