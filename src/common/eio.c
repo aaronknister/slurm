@@ -231,6 +231,8 @@ int eio_signal_shutdown(eio_handle_t *eio)
 {
 	char c = 1;
 
+	debug5("eio_signal_shutdown called");
+
 	slurm_mutex_lock(&eio->shutdown_mutex);
 	eio->shutdown_time = time(NULL);
 	slurm_mutex_unlock(&eio->shutdown_mutex);
@@ -252,8 +254,11 @@ static void _mark_shutdown_true(List obj_list)
 	ListIterator objs;
 	eio_obj_t *obj;
 
+	debug5("_mark_shutdown_true called");
+
 	objs = list_iterator_create(obj_list);
 	while ((obj = list_next(objs))) {
+		debug5("_mark_shutdown_true: fd %d", obj->fd);
 		obj->shutdown = true;
 	}
 	list_iterator_destroy(objs);
@@ -306,9 +311,13 @@ int eio_handle_mainloop(eio_handle_t *eio)
 		debug4("eio: handling events for %d objects",
 		       list_count(eio->obj_list));
 		nfds = _poll_setup_pollfds(pollfds, map, eio->obj_list);
+
 		if ((nfds <= 0) ||
 		    (pollfds == NULL))	/* Fix for CLANG false positive */
+		{
+			debug5("eio: nfds %d, pollfds %p", nfds, pollfds);
 			goto done;
+		}
 
 		/*
 		 *  Setup eio handle signalling fd
@@ -319,14 +328,18 @@ int eio_handle_mainloop(eio_handle_t *eio)
 
 		xassert(nfds <= maxnfds + 1);
 
+		/* Get shutdown_time to pass to _poll_internal */
 		slurm_mutex_lock(&eio->shutdown_mutex);
 		shutdown_time = eio->shutdown_time;
 		slurm_mutex_unlock(&eio->shutdown_mutex);
 		if (_poll_internal(pollfds, nfds, shutdown_time) < 0)
 			goto error;
 
-		if (pollfds[nfds-1].revents & POLLIN)
+		/* See if we've been told to shut down by eio_signal_shutdown */
+		if (pollfds[nfds-1].revents & POLLIN) {
+			debug5("eio: got wakeup handler event on fd %d", pollfds[nfds-1].fd);
 			_eio_wakeup_handler(eio);
+		}
 
 		_poll_dispatch(pollfds, nfds - 1, map, eio->obj_list);
 
@@ -357,9 +370,11 @@ _poll_internal(struct pollfd *pfds, unsigned int nfds, time_t shutdown_time)
 		timeout = 1000;	/* Return every 1000 msec during shutdown */
 	else
 		timeout = -1;
+	debug5("_poll_internal: timeout=%d", timeout);
 	while ((n = poll(pfds, nfds, timeout)) < 0) {
 		switch (errno) {
 		case EINTR :
+			debug("_poll_internal: EINTR");
 			return 0;
 		case EAGAIN:
 			continue;
@@ -369,6 +384,7 @@ _poll_internal(struct pollfd *pfds, unsigned int nfds, time_t shutdown_time)
 		}
 	}
 
+	debug5("_poll_internal: return %d", n);
 	return n;
 }
 
@@ -439,8 +455,10 @@ _poll_dispatch(struct pollfd *pfds, unsigned int nfds, eio_obj_t *map[],
 	int i;
 
 	for (i = 0; i < nfds; i++) {
-		if (pfds[i].revents > 0)
+		if (pfds[i].revents > 0) {
+			debug5("eio: got revents %d on fd %d", pfds[i].revents, pfds[i].fd);
 			_poll_handle_event(pfds[i].revents, map[i], objList);
+		}
 	}
 }
 
