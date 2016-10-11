@@ -316,6 +316,12 @@ int eio_handle_mainloop(eio_handle_t *eio)
 		    (pollfds == NULL))	/* Fix for CLANG false positive */
 		{
 			debug5("eio: nfds %d, pollfds %p", nfds, pollfds);
+			if (pollfds) {
+				/* mark all sockets as shutdown */
+				debug5("eio: marking objs as shutdown");
+				_mark_shutdown_true(eio->obj_list);
+				_poll_setup_pollfds(pollfds, map, eio->obj_list);
+			}
 			goto done;
 		}
 

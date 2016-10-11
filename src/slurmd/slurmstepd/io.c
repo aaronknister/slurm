@@ -237,7 +237,7 @@ _client_readable(eio_obj_t *obj)
 
 	if (obj->shutdown) {
 		debug5("  false, shutdown");
-		shutdown(obj->fd, SHUT_RD);
+		shutdown(obj->fd, SHUT_RDWR);
 		client->in_eof = true;
 		return false;
 	}
